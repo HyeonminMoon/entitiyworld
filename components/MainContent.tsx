@@ -5,9 +5,11 @@ import TrainingArea from './TrainingArea';
 import BattleArea from './BattleArea';
 import GrowthArea from './GrowthArea';
 import ArchiveArea from './ArchiveArea';
+import ExploreArea from './ExploreArea';
 import { UserEntity, EntityMaster, ArchiveStatus } from '@/types/entity';
 import { MOCK_ENTITIES } from '@/data/mockEntities';
 import { generateRandomStats } from '@/lib/battleUtils';
+import { MAPS } from '@/data/maps';
 
 interface MainContentProps {
   activeMenu: string;
@@ -17,6 +19,7 @@ interface MainContentProps {
 
 export default function MainContent({ activeMenu, points, onPointsChange }: MainContentProps) {
   const [inBattle, setInBattle] = useState(false);
+  const [selectedMap, setSelectedMap] = useState<string | null>(null);
   const [playerEntity, setPlayerEntity] = useState<UserEntity | null>(null);
   const [discoveredEntities, setDiscoveredEntities] = useState<Map<number, ArchiveStatus>>(new Map());
 
@@ -25,8 +28,13 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
     setPlayerEntity(updatedEntity);
   };
 
+  // 맵 선택 핸들러
+  const handleMapSelect = (mapId: string) => {
+    setSelectedMap(mapId);
+  };
+
   // 전투 시작
-  const handleStartBattle = () => {
+  const handleStartBattle = (mapId: string) => {
     // 임시 플레이어 엔티티 생성 (Forest 첫 번째 엔티티)
     const firstEntity = MOCK_ENTITIES.find(e => e.id === 21); // Forest Rabbit
     if (firstEntity) {
@@ -42,6 +50,7 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
         acquired_at: new Date(),
       };
       setPlayerEntity(tempPlayer);
+      setSelectedMap(mapId);
       setInBattle(true);
     }
   };
@@ -49,6 +58,7 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
   // 전투 종료
   const handleBattleEnd = (result: 'win' | 'lose' | 'escape', expGained: number) => {
     setInBattle(false);
+    setSelectedMap(null);
     
     if (result === 'win' && playerEntity) {
       // 경험치 추가
@@ -98,29 +108,62 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
         )}
 
         {/* 탐색 모드 */}
-        {activeMenu === 'explore' && !inBattle && (
+        {activeMenu === 'explore' && !inBattle && !selectedMap && (
+          <ExploreArea
+            discoveredCount={Array.from(discoveredEntities.values()).filter(s => s === 'open').length}
+            totalEntities={MOCK_ENTITIES.length}
+            onMapSelect={handleMapSelect}
+          />
+        )}
+
+        {/* 맵 상세 화면 */}
+        {activeMenu === 'explore' && !inBattle && selectedMap && (
           <div className="flex flex-col items-center gap-6">
-            <div className="w-[400px] h-[400px] bg-[#16213e] border-4 border-[#8b5cf6] rounded-2xl flex items-center justify-center">
+            <div className="w-[500px] bg-[#16213e] border-4 border-[#8b5cf6] rounded-2xl p-8">
               <div className="text-center">
-                <div className="text-8xl mb-4">🗺️</div>
-                <h2 className="text-2xl font-bold text-white mb-2">Forest 맵</h2>
-                <p className="text-[#e5e7eb] mb-6">엔티티가 출몰합니다!</p>
-                <button
-                  onClick={handleStartBattle}
-                  className="px-8 py-3 bg-[#8b5cf6] text-white font-bold rounded-lg hover:bg-[#a78bfa] transition-all shadow-lg shadow-[#8b5cf6]/50"
-                >
-                  ⚔️ 전투 시작
-                </button>
+                {(() => {
+                  const map = MAPS.find(m => m.id === selectedMap);
+                  if (!map) return null;
+                  const icon = map.id === 'water' ? '💧' :
+                               map.id === 'fire' ? '🔥' :
+                               map.id === 'forest' ? '🌲' :
+                               map.id === 'electric' ? '⚡' :
+                               map.id === 'stone' ? '🪨' : '🌀';
+                  return (
+                    <>
+                      <div className="text-8xl mb-4">{icon}</div>
+                      <h2 className="text-3xl font-bold text-white mb-3">{map.display_name}</h2>
+                      <p className="text-[#e5e7eb] mb-2">{map.description}</p>
+                      <p className="text-[#8b5cf6] text-sm mb-6">
+                        출현 엔티티: #{map.entity_id_range[0]} ~ #{map.entity_id_range[1]}
+                      </p>
+                      <div className="flex gap-3 justify-center">
+                        <button
+                          onClick={() => setSelectedMap(null)}
+                          className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all"
+                        >
+                          ← 돌아가기
+                        </button>
+                        <button
+                          onClick={() => handleStartBattle(selectedMap)}
+                          className="px-8 py-3 bg-[#8b5cf6] text-white font-bold rounded-lg hover:bg-[#a78bfa] transition-all shadow-lg shadow-[#8b5cf6]/50"
+                        >
+                          ⚔️ 전투 시작
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
         )}
 
         {/* 전투 화면 */}
-        {activeMenu === 'explore' && inBattle && playerEntity && (
+        {activeMenu === 'explore' && inBattle && playerEntity && selectedMap && (
           <BattleArea
             playerEntity={playerEntity}
-            currentMap="forest"
+            currentMap={selectedMap}
             onBattleEnd={handleBattleEnd}
             onCapture={handleCapture}
           />

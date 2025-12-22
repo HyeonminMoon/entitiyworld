@@ -15,6 +15,19 @@ export function getEntityImageUrl(entityId: number, status: 'open' | 'close'): s
 }
 
 /**
+ * Supabase Storage에서 배경 이미지 URL 가져오기
+ * @param path - 배경 이미지 경로 (예: 'background/field.jpg')
+ * @returns 이미지 Public URL
+ */
+export function getBackgroundImageUrl(path: string): string {
+  const { data } = supabase.storage
+    .from('entity-images')
+    .getPublicUrl(path);
+  
+  return data.publicUrl;
+}
+
+/**
  * 로컬 이미지 경로 (fallback용)
  */
 export function getLocalImagePath(entityId: number, status: 'open' | 'close'): string {
