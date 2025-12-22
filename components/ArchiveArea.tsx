@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { EntityMaster, ArchiveStatus } from '@/types/entity';
 import { MOCK_ENTITIES } from '@/data/mockEntities';
 import Image from 'next/image';
+import { getEntityImageUrl } from '@/lib/imageUtils';
 
 interface ArchiveAreaProps {
   discoveredEntities: Map<number, ArchiveStatus>; // entity_id -> status
@@ -169,7 +170,7 @@ function EntityCard({ entity, status, onClick }: EntityCardProps) {
       >
         <div className="relative w-full h-full flex items-center justify-center">
           <Image
-            src={`/assets/entities/close/${entity.id}.png`}
+            src={getEntityImageUrl(entity.id, 'close')}
             alt={`Entity ${entity.id} silhouette`}
             width={100}
             height={100}
@@ -197,7 +198,7 @@ function EntityCard({ entity, status, onClick }: EntityCardProps) {
     >
       <div className="relative w-full h-full flex items-center justify-center">
         <Image
-          src={`/assets/entities/open/${entity.id}.png`}
+          src={getEntityImageUrl(entity.id, 'open')}
           alt={entity.display_name}
           width={100}
           height={100}
@@ -276,7 +277,7 @@ function EntityDetailModal({ entity, status, onClose }: EntityDetailModalProps) 
           <div className="text-center py-12">
             <div className="bg-[#1a1a2e] rounded-lg p-12 mb-6 flex justify-center items-center">
               <Image
-                src={`/assets/entities/close/${entity.id}.png`}
+                src={getEntityImageUrl(entity.id, 'close')}
                 alt={`Entity ${entity.id} silhouette`}
                 width={300}
                 height={300}
@@ -299,7 +300,7 @@ function EntityDetailModal({ entity, status, onClose }: EntityDetailModalProps) 
             {/* 이미지 영역 */}
             <div className="bg-[#1a1a2e] rounded-lg p-12 mb-6 flex justify-center items-center">
               <Image
-                src={`/assets/entities/open/${entity.id}.png`}
+                src={getEntityImageUrl(entity.id, 'open')}
                 alt={entity.display_name}
                 width={400}
                 height={400}
