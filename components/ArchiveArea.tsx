@@ -2,28 +2,28 @@
 
 import { useState } from 'react';
 import { EntityMaster, ArchiveStatus } from '@/types/entity';
-import { MOCK_ENTITIES } from '@/data/mockEntities';
 import Image from 'next/image';
 import { getEntityImageUrl } from '@/lib/imageUtils';
 
 interface ArchiveAreaProps {
   discoveredEntities: Map<number, ArchiveStatus>; // entity_id -> status
+  entities: EntityMaster[];
 }
 
-export default function ArchiveArea({ discoveredEntities }: ArchiveAreaProps) {
+export default function ArchiveArea({ discoveredEntities, entities }: ArchiveAreaProps) {
   const [selectedEntity, setSelectedEntity] = useState<EntityMaster | null>(null);
   const [filterElement, setFilterElement] = useState<string>('all');
   const [filterRarity, setFilterRarity] = useState<string>('all');
 
   // 필터링된 엔티티 목록
-  const filteredEntities = MOCK_ENTITIES.filter(entity => {
+  const filteredEntities = entities.filter(entity => {
     const matchElement = filterElement === 'all' || entity.element === filterElement;
     const matchRarity = filterRarity === 'all' || entity.rarity === filterRarity;
     return matchElement && matchRarity;
   });
 
   // 발견 통계
-  const totalEntities = MOCK_ENTITIES.length;
+  const totalEntities = entities.length;
   const discoveredCount = Array.from(discoveredEntities.values()).filter(
     status => status === 'open'
   ).length;

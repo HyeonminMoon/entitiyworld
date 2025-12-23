@@ -4,29 +4,58 @@ import { useState } from 'react';
 import GameLayout from '@/components/GameLayout';
 import ExploreArea from '@/components/ExploreArea';
 import BattleArea from '@/components/BattleArea';
+import StarterSelection from '@/components/StarterSelection';
 import { useGame } from '@/contexts/GameContext';
-import { MOCK_ENTITIES } from '@/data/mockEntities';
 import { MAPS } from '@/data/maps';
 import { generateRandomStats } from '@/lib/battleUtils';
-import { UserEntity, EntityMaster } from '@/types/entity';
+import { UserEntity, EntityMaster, Stats } from '@/types/entity';
+import { saveUserEntity, saveArchiveEntry } from '@/lib/supabase';
 
 export default function ExplorePage() {
-  const { playerEntity, setPlayerEntity, discoveredEntities, updateDiscoveredEntity } = useGame();
+  const { playerEntity, setPlayerEntity, discoveredEntities, updateDiscoveredEntity, entities, entitiesLoading, user, userEntities, setUserEntities } = useGame();
   const [selectedMap, setSelectedMap] = useState<string | null>(null);
   const [inBattle, setInBattle] = useState(false);
+  const [hasStarter, setHasStarter] = useState(!!playerEntity);
 
   // 도감 통계
   const discoveredCount = Array.from(discoveredEntities.values()).filter(s => s === 'open').length;
-  const totalEntities = MOCK_ENTITIES.length;
+  const totalEntities = entities.length;
 
-  // 맵 선택
-  const handleMapSelect = (mapId: string) => {
-    setSelectedMap(mapId);
+  // 시작 엔티티 선택
+  const handleStarterSelect = async (entity: EntityMaster, stats: Stats) => {
+    if (!user) {
+      alert('로그인이 필요합니다!');
+      return;
+    }
+
+    // DB에 저장
+    const savedEntity = await saveUserEntity(user.id, entity.id, stats);
+    if (!savedEntity) {
+      alert('엔티티 저장에 실패했습니다!');
+      return;
+    }
+
+    // 도감에도 기록
+    await saveArchiveEntry(user.id, entity.id, 'open');
+
+    const newPlayer: UserEntity = {
+      id: savedEntity.id,
+      entity_id: entity.id,
+      user_id: user.id,
+      current_level: 1,
+      current_stats: stats,
+      current_xp: 0,
+      current_hp: stats.hp,
+      acquired_at: new Date(savedEntity.acquired_at),
+    };
+    setPlayerEntity(newPlayer);
+    updateDiscoveredEntity(entity.id, 'open');
+    setHasStarter(true);
   };
 
-  // 전투 시작
-  const handleStartBattle = (mapId: string) => {
-    const firstEntity = MOCK_ENTITIES.find(e => e.id === 21);
+  // 맵 선택 → 바로 전투 시작
+  const handleMapSelect = (mapId: string) => {
+    const firstEntity = entities.find(e => e.id === 21);
     if (firstEntity) {
       const stats = generateRandomStats(firstEntity.min_stats, firstEntity.max_stats);
       const tempPlayer: UserEntity = {
@@ -65,84 +94,84 @@ export default function ExplorePage() {
   };
 
   // 포획 성공
-  const handleCapture = (entity: EntityMaster) => {
+  const handleCapture = async (entity: EntityMaster, capturedStats: Stats) => {
+    if (!user) return;
+    
+    // DB에 포획한 엔티티 저장
+    const savedEntity = await saveUserEntity(user.id, entity.id, capturedStats);
+    if (savedEntity) {
+      // userEntities 배열에 추가
+      const newEntity: UserEntity = {
+        id: savedEntity.id,
+        entity_id: entity.id,
+        user_id: user.id,
+        current_level: 1,
+        current_stats: capturedStats,
+        current_xp: 0,
+        current_hp: capturedStats.hp,
+        acquired_at: new Date(savedEntity.acquired_at),
+      };
+      setUserEntities([...userEntities, newEntity]);
+    }
+    
+    // 도감에 포획 기록 저장
+    await saveArchiveEntry(user.id, entity.id, 'open');
     updateDiscoveredEntity(entity.id, 'open');
   };
 
   // 전투 시작 시 조우 기록
-  const handleEncounter = (entity: EntityMaster) => {
+  const handleEncounter = async (entity: EntityMaster) => {
+    if (!user) return;
+    
     if (!discoveredEntities.has(entity.id)) {
+      // 도감에 조우 기록 저장
+      await saveArchiveEntry(user.id, entity.id, 'close');
       updateDiscoveredEntity(entity.id, 'close');
     }
   };
 
   return (
-    <GameLayout>
-      <main className="flex-1 bg-[#1a1a2e] p-8 flex items-center justify-center overflow-y-auto">
-        <div className="text-center w-full h-full">
-          {/* 맵 선택 화면 */}
-          {!inBattle && !selectedMap && (
-            <ExploreArea
-              discoveredCount={discoveredCount}
-              totalEntities={totalEntities}
-              onMapSelect={handleMapSelect}
-            />
-          )}
-
-          {/* 맵 상세 화면 */}
-          {!inBattle && selectedMap && (
-            <div className="flex flex-col items-center gap-6">
-              <div className="w-[500px] bg-[#16213e] border-4 border-[#8b5cf6] rounded-2xl p-8">
-                <div className="text-center">
-                  {(() => {
-                    const map = MAPS.find(m => m.id === selectedMap);
-                    if (!map) return null;
-                    const icon = map.id === 'water' ? '💧' :
-                                 map.id === 'fire' ? '🔥' :
-                                 map.id === 'forest' ? '🌲' :
-                                 map.id === 'electric' ? '⚡' :
-                                 map.id === 'stone' ? '🪨' : '🌀';
-                    return (
-                      <>
-                        <div className="text-8xl mb-4">{icon}</div>
-                        <h2 className="text-3xl font-bold text-white mb-3">{map.display_name}</h2>
-                        <p className="text-[#e5e7eb] mb-2">{map.description}</p>
-                        <p className="text-[#8b5cf6] text-sm mb-6">
-                          출현 엔티티: #{map.entity_id_range[0]} ~ #{map.entity_id_range[1]}
-                        </p>
-                        <div className="flex gap-3 justify-center">
-                          <button
-                            onClick={() => setSelectedMap(null)}
-                            className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all"
-                          >
-                            ← 돌아가기
-                          </button>
-                          <button
-                            onClick={() => handleStartBattle(selectedMap)}
-                            className="px-8 py-3 bg-[#8b5cf6] text-white font-bold rounded-lg hover:bg-[#a78bfa] transition-all shadow-lg shadow-[#8b5cf6]/50"
-                          >
-                            ⚔️ 전투 시작
-                          </button>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 전투 화면 */}
-          {inBattle && playerEntity && selectedMap && (
-            <BattleArea
-              playerEntity={playerEntity}
-              currentMap={selectedMap}
-              onBattleEnd={handleBattleEnd}
-              onCapture={handleCapture}
-            />
-          )}
+    <>
+      {/* 로딩 화면 */}
+      {entitiesLoading && (
+        <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center">
+          <div className="text-white text-2xl">엔티티 데이터 로딩 중...</div>
         </div>
-      </main>
-    </GameLayout>
+      )}
+
+      {/* 시작 엔티티 선택 화면 */}
+      {!entitiesLoading && !hasStarter && (
+        <StarterSelection onSelect={handleStarterSelect} entities={entities} />
+      )}
+
+      {/* 게임 화면 */}
+      {!entitiesLoading && hasStarter && (
+        <GameLayout>
+          <main className="flex-1 bg-[#1a1a2e] p-8 flex items-center justify-center overflow-y-auto">
+            <div className="text-center w-full h-full">
+              {/* 맵 선택 화면 */}
+              {!inBattle && !selectedMap && (
+                <ExploreArea
+                  discoveredCount={discoveredCount}
+                  totalEntities={totalEntities}
+                  onMapSelect={handleMapSelect}
+                />
+              )}
+
+              {/* 전투 화면 */}
+              {inBattle && playerEntity && selectedMap && (
+                <BattleArea
+                  playerEntity={playerEntity}
+                  currentMap={selectedMap}
+                  onBattleEnd={handleBattleEnd}
+                  onCapture={handleCapture}
+                  entities={entities}
+                />
+              )}
+            </div>
+          </main>
+        </GameLayout>
+      )}
+    </>
   );
 }

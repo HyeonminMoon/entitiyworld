@@ -7,11 +7,11 @@ import { Map } from '@/types/entity';
 
 export const MAPS: Map[] = [
   {
-    id: 'forest',
-    name: 'forest',
-    display_name: 'Forest',
-    description: '균형잡힌 생태계. 모험의 시작.',
-    entity_id_range: [21, 30],
+    id: 'water',
+    name: 'water',
+    display_name: 'Water',
+    description: '깊은 바다의 비밀. 방어력이 높은 엔티티들.',
+    entity_id_range: [1, 10],
     unlock_requirement: 0, // 기본 해금
   },
   {
@@ -20,15 +20,15 @@ export const MAPS: Map[] = [
     display_name: 'Fire',
     description: '뜨거운 화염의 땅. 공격적인 엔티티들이 서식.',
     entity_id_range: [11, 20],
-    unlock_requirement: 80, // Forest 도감 80%
+    unlock_requirement: 80, // Water 80% 필요
   },
   {
-    id: 'water',
-    name: 'water',
-    display_name: 'Water',
-    description: '깊은 바다의 비밀. 방어력이 높은 엔티티들.',
-    entity_id_range: [1, 10],
-    unlock_requirement: 80, // Fire 도감 80%
+    id: 'forest',
+    name: 'forest',
+    display_name: 'Forest',
+    description: '균형잡힌 생태계. 모험의 시작.',
+    entity_id_range: [21, 30],
+    unlock_requirement: 80, // Fire 80% 필요
   },
   {
     id: 'electric',
@@ -36,7 +36,7 @@ export const MAPS: Map[] = [
     display_name: 'Electric',
     description: '전기가 흐르는 공간. 마법 공격형 엔티티들.',
     entity_id_range: [31, 40],
-    unlock_requirement: 80, // Water 도감 80%
+    unlock_requirement: 80, // Forest 80% 필요
   },
   {
     id: 'stone',
@@ -44,7 +44,7 @@ export const MAPS: Map[] = [
     display_name: 'Stone',
     description: '견고한 바위 산맥. 최강의 방어력.',
     entity_id_range: [41, 50],
-    unlock_requirement: 80, // Electric 도감 80%
+    unlock_requirement: 80, // Electric 80% 필요
   },
   {
     id: 'chaos',
@@ -52,7 +52,7 @@ export const MAPS: Map[] = [
     display_name: 'Chaos',
     description: '혼돈의 공간. 모든 엔티티 + 레전드 출현!',
     entity_id_range: [1, 52], // 전체
-    unlock_requirement: 80, // Stone 도감 80%
+    unlock_requirement: 80, // Stone 80% 필요
   },
 ];
 

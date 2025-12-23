@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { EntityMaster, UserEntity, Stats } from '@/types/entity';
-import { MOCK_ENTITIES } from '@/data/mockEntities';
 import { generateRandomStats, calculateDamage, calculateExpGain, BattleLog } from '@/lib/battleUtils';
 import { CAPTURE_RATES } from '@/data/constants';
 
@@ -10,10 +9,11 @@ interface BattleAreaProps {
   playerEntity: UserEntity | null;
   currentMap: string;
   onBattleEnd: (result: 'win' | 'lose' | 'escape', expGained: number) => void;
-  onCapture?: (entity: EntityMaster) => void;
+  onCapture?: (entity: EntityMaster, stats: Stats) => void;
+  entities: EntityMaster[];
 }
 
-export default function BattleArea({ playerEntity, currentMap, onBattleEnd, onCapture }: BattleAreaProps) {
+export default function BattleArea({ playerEntity, currentMap, onBattleEnd, onCapture, entities }: BattleAreaProps) {
   const [enemy, setEnemy] = useState<EntityMaster | null>(null);
   const [enemyCurrentHp, setEnemyCurrentHp] = useState(0);
   const [enemyStats, setEnemyStats] = useState<Stats | null>(null);
@@ -25,17 +25,17 @@ export default function BattleArea({ playerEntity, currentMap, onBattleEnd, onCa
 
   // 전투 시작: 적 생성
   useEffect(() => {
-    if (!playerEntity) return;
+    if (!playerEntity || entities.length === 0) return;
     
     spawnEnemy();
     setPlayerCurrentHp(playerEntity.current_stats.hp);
     addLog({ type: 'player_attack', message: '전투 시작!' });
-  }, []);
+  }, [entities]);
 
   // 적 생성
   const spawnEnemy = () => {
     // Forest 맵 엔티티 (21~30)
-    const forestEntities = MOCK_ENTITIES.filter(e => e.id >= 21 && e.id <= 30 && e.rarity === 'normal');
+    const forestEntities = entities.filter(e => e.id >= 21 && e.id <= 30 && e.rarity === 'normal');
     const randomEnemy = forestEntities[Math.floor(Math.random() * forestEntities.length)];
     
     const stats = generateRandomStats(randomEnemy.min_stats, randomEnemy.max_stats);
@@ -108,13 +108,13 @@ export default function BattleArea({ playerEntity, currentMap, onBattleEnd, onCa
     addLog({ type: 'player_win', message: `승리! ${expGained} 경험치 획득!` });
     
     // 포획 확률 판정
-    if (enemy) {
+    if (enemy && enemyStats) {
       const captureRate = CAPTURE_RATES[enemy.rarity];
       const captured = Math.random() < captureRate;
       
       if (captured) {
         addLog({ type: 'player_win', message: `${enemy.display_name}를 포획했다!` });
-        onCapture?.(enemy);
+        onCapture?.(enemy, enemyStats);
       } else {
         addLog({ type: 'player_win', message: '포획 실패...' });
       }

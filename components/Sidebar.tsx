@@ -9,6 +9,7 @@ export default function Sidebar() {
   const menuItems = [
     { id: 'training', label: '훈련', icon: '⚡', path: '/training' },
     { id: 'explore', label: '탐색', icon: '🗺️', path: '/explore' },
+    { id: 'bag', label: '가방', icon: '🎒', path: '/bag' },
     { id: 'grow', label: '성장', icon: '📈', path: '/grow' },
     { id: 'archive', label: '도감', icon: '📚', path: '/archive' },
   ];

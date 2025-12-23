@@ -2,7 +2,6 @@
 
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
-import ArchivePanel from '@/components/ArchivePanel';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function GameLayout({
@@ -17,7 +16,6 @@ export default function GameLayout({
         <div className="flex-1 flex overflow-hidden">
           <Sidebar />
           {children}
-          <ArchivePanel />
         </div>
       </div>
     </ProtectedRoute>

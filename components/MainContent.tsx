@@ -7,9 +7,9 @@ import GrowthArea from './GrowthArea';
 import ArchiveArea from './ArchiveArea';
 import ExploreArea from './ExploreArea';
 import { UserEntity, EntityMaster, ArchiveStatus } from '@/types/entity';
-import { MOCK_ENTITIES } from '@/data/mockEntities';
 import { generateRandomStats } from '@/lib/battleUtils';
 import { MAPS } from '@/data/maps';
+import { useGame } from '@/contexts/GameContext';
 
 interface MainContentProps {
   activeMenu: string;
@@ -18,6 +18,7 @@ interface MainContentProps {
 }
 
 export default function MainContent({ activeMenu, points, onPointsChange }: MainContentProps) {
+  const { entities } = useGame();
   const [inBattle, setInBattle] = useState(false);
   const [selectedMap, setSelectedMap] = useState<string | null>(null);
   const [playerEntity, setPlayerEntity] = useState<UserEntity | null>(null);
@@ -36,7 +37,7 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
   // 전투 시작
   const handleStartBattle = (mapId: string) => {
     // 임시 플레이어 엔티티 생성 (Forest 첫 번째 엔티티)
-    const firstEntity = MOCK_ENTITIES.find(e => e.id === 21); // Forest Rabbit
+    const firstEntity = entities.find(e => e.id === 21); // Forest Rabbit
     if (firstEntity) {
       const stats = generateRandomStats(firstEntity.min_stats, firstEntity.max_stats);
       const tempPlayer: UserEntity = {
@@ -111,7 +112,7 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
         {activeMenu === 'explore' && !inBattle && !selectedMap && (
           <ExploreArea
             discoveredCount={Array.from(discoveredEntities.values()).filter(s => s === 'open').length}
-            totalEntities={MOCK_ENTITIES.length}
+            totalEntities={entities.length}
             onMapSelect={handleMapSelect}
           />
         )}
@@ -165,7 +166,8 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
             playerEntity={playerEntity}
             currentMap={selectedMap}
             onBattleEnd={handleBattleEnd}
-            onCapture={handleCapture}
+            onCapture={(entity, stats) => handleCapture(entity)}
+            entities={entities}
           />
         )}
 
@@ -181,7 +183,7 @@ export default function MainContent({ activeMenu, points, onPointsChange }: Main
 
         {/* 도감 모드 */}
         {activeMenu === 'archive' && (
-          <ArchiveArea discoveredEntities={discoveredEntities} />
+          <ArchiveArea discoveredEntities={discoveredEntities} entities={entities} />
         )}
       </div>
     </main>
